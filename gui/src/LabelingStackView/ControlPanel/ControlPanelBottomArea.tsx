@@ -9,7 +9,6 @@ type Props ={
 	saving: boolean
 	dirty: boolean
 	hasGithubUri: boolean
-	focusFrameInterval?: [number, number]
 	label: string
 }
 
@@ -21,7 +20,7 @@ const labelHeight = 16
 const spacing = 10
 const labelFontSize = 12
 
-const ControlPanelBottomArea: FunctionComponent<Props> = ({width, height, onCommand, errorString, saving, dirty, hasGithubUri, focusFrameInterval, label}) => {
+const ControlPanelBottomArea: FunctionComponent<Props> = ({width, height, onCommand, errorString, saving, dirty, hasGithubUri, label}) => {
 	return (
 		<div className="ControlPanelControls" style={{position: 'absolute', width, height}}>
 			<div style={{position: 'absolute'}}>
@@ -103,7 +102,7 @@ const SaveAnnotationsRow: FunctionComponent<{width: number, height: number, onCo
 	return (
 		<div>
 			<div style={{position: 'absolute', height: labelHeight, width, fontWeight: 'bold', fontSize: labelFontSize}}>
-				Save annotations
+				Save annotation
 			</div>
 			<div style={{position: 'absolute', top: labelHeight, width}}>
 				<div style={{position: 'absolute', left: spacing}}>

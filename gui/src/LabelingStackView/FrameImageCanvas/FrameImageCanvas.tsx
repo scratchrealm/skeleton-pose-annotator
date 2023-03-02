@@ -1,4 +1,5 @@
 import { FunctionComponent, useEffect, useRef } from "react";
+import { AffineTransform } from "../AffineTransform";
 
 
 type Props = {
@@ -8,12 +9,7 @@ type Props = {
     height: number
 }
 
-export type AffineTransform = {
-    forward: number[][]
-    inverse: number[][]
-}
-
-const LabelingStackFrameCanvas: FunctionComponent<Props> = ({jpeg, affineTransform, width, height}) => {
+const FrameImageCanvas: FunctionComponent<Props> = ({jpeg, affineTransform, width, height}) => {
     const canvasRef = useRef<any>(null)
     useEffect(() => {
         let canceled = false
@@ -62,4 +58,4 @@ function arrayBufferToBase64( buffer: ArrayBuffer ) {
     return window.btoa( binary );
 }
 
-export default LabelingStackFrameCanvas
+export default FrameImageCanvas

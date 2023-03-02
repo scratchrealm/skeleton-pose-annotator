@@ -1,5 +1,5 @@
-import { Add, Delete } from "@mui/icons-material";
-import { Button, IconButton, Table, TableBody, TableCell, TableHead, TableRow, ThemeProvider } from "@mui/material";
+import { AddCircle, Delete } from "@mui/icons-material";
+import { IconButton, Table, TableBody, TableCell, TableHead, TableRow, ThemeProvider } from "@mui/material";
 import { FunctionComponent, useCallback } from "react";
 import useSpa from "../../SpaContext/useSpa";
 import { tableTheme } from "./themes";
@@ -22,7 +22,7 @@ const SkeletonNodesWidget: FunctionComponent<Props> = ({width, height}) => {
 	return (
 		<div style={{position: 'absolute', width, height, overflowY: 'auto'}}>
             <div>
-                <IconButton onClick={handleAddNode} size="small" sx={{paddingBottom: 0}}><Add /></IconButton>
+                <IconButton onClick={handleAddNode} size="small" sx={{paddingBottom: 0}}><AddCircle /></IconButton>
             </div>
             <ThemeProvider theme={tableTheme}>
                 <Table>

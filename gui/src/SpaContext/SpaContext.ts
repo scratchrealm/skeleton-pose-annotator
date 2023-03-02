@@ -21,10 +21,11 @@ export type SpaNodeLocation = {
 }
 
 export type SpaFrameAnnotationInstance = {
-    nodes: SpaNodeLocation[]
+    nodeLocations: SpaNodeLocation[]
 }
 
 export type SpaFrameAnnotation = {
+    frameIndex: number
     instances: SpaFrameAnnotationInstance[]
 }
 
@@ -63,19 +64,45 @@ export type SpaAction = {
     type: 'setFrameImages'
     images: SpaFrameImage[]
 } | {
-    type: 'addSkeletonNode',
+    type: 'addSkeletonNode'
     id: string
 } | {
-    type: 'deleteSkeletonNode',
+    type: 'deleteSkeletonNode'
     id: string
 } | {
-    type: 'addSkeletonEdge',
+    type: 'addSkeletonEdge'
     id1: string
     id2: string
 } | {
-    type: 'deleteSkeletonEdge',
+    type: 'deleteSkeletonEdge'
     id1: string
     id2: string
+} | {
+    type: 'moveNodeLocation'
+    frameIndex: number
+    instanceIndex: number
+    nodeId: string
+    x: number
+    y: number
+} | {
+    type: 'addInstance'
+    frameIndex: number
+} | {
+    type: 'deleteInstance'
+    frameIndex: number
+    instanceIndex: number
+} | {
+    type: 'cleanUpNodeLocations'
+} | {
+    type: 'deleteNodeLocation'
+    frameIndex: number
+    instanceIndex: number
+    nodeId: string
+} | {
+    type: 'addNodeLocation'
+    frameIndex: number
+    instanceIndex: number
+    nodeId: string
 }
 
 export const initialSpaData: SpaData = {
@@ -86,9 +113,21 @@ export const initialSpaData: SpaData = {
     annotation: {
         skeleton: {
             nodes: [{id: 'head'}, {id: 'thorax'}],
-            edges: []
+            edges: [{id1: 'head', id2: 'thorax'}]
         },
-        frameAnnotations: []
+        frameAnnotations: [
+            {
+                frameIndex: 0,
+                instances: [
+                    {
+                        nodeLocations: [
+                            {id: 'head', x: 50, y: 50},
+                            {id: 'thorax', x: 150, y: 90}
+                        ]
+                    }
+                ]
+            }
+        ]
     },
     frameImages: []
 }

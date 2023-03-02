@@ -1,4 +1,5 @@
 import { FunctionComponent } from "react";
+import InstancesWidget from "./InstancesWidget";
 
 type Props = {
     width: number
@@ -7,7 +8,10 @@ type Props = {
 
 const FrameRightPanel: FunctionComponent<Props> = ({width, height}) => {
     return (
-        <div>Right panel</div>
+        <InstancesWidget
+            width={width}
+            height={height}
+        />
     )
 }
 

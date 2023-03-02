@@ -16,6 +16,16 @@ const MainWindow: FunctionComponent = () => {
     const [spaData, spaDispatch] = useReducer(spaReducer, initialSpaData)
     const spaContextValue = useMemo(() => ({spaData, spaDispatch}), [spaData, spaDispatch])
 
+    useEffect(() => {
+        // any time the annotation changes clean up the node locations
+        spaDispatch({type: 'cleanUpNodeLocations'})
+    }, [spaData.annotation])
+
+    useEffect(() => {
+        if (!data) return
+        console.info(data)
+    }, [data])
+
     if (errorMessage) {
         const style0 = { color: 'red' }
         return <div style={style0}>{errorMessage}</div>
@@ -24,7 +34,6 @@ const MainWindow: FunctionComponent = () => {
     if (!data) {
         return <div>Waiting for data</div>
     }
-    console.info(data)
     if (!isViewData(data)) {
         return <div>Invalid view data</div>
     }
