@@ -100,6 +100,21 @@ const spaReducer = (state: SpaData, action: SpaAction): SpaData => {
             }
         }
     }
+    else if (action.type === 'rotateInstanceAroundNode') {
+        return {
+            ...state,
+            annotation: {
+                ...state.annotation,
+                frameAnnotations: updateFrameAnnotation(state.annotation.frameAnnotations, action.frameIndex, (fa: SpaFrameAnnotation): SpaFrameAnnotation => ({
+                    ...fa,
+                    instances: updateFrameAnnotationInstance(fa.instances, action.instanceIndex, (fai: SpaFrameAnnotationInstance): SpaFrameAnnotationInstance => ({
+                        ...fai,
+                        nodeLocations: rotateNodeLocationsAroundNode(fai.nodeLocations, action.nodeId, action.degrees)
+                    }))
+                }))
+            }
+        }
+    }
     else if (action.type === 'addInstance') {
         return {
             ...state,
@@ -159,6 +174,12 @@ const spaReducer = (state: SpaData, action: SpaAction): SpaData => {
             }
         }
     }
+    else if (action.type === 'setAnnotation') {
+        return {
+            ...state,
+            annotation: action.annotation
+        }
+    }
     else return state
 }
 
@@ -187,6 +208,20 @@ function updateNodeLocation(x: SpaNodeLocation[], id: string, f: (a: SpaNodeLoca
     return x.map(a => (
         a.id === id ? f(a) : a
     ))
+}
+
+function rotateNodeLocationsAroundNode(nodeLocations: SpaNodeLocation[], nodeId: string, degrees: number) {
+    const n = nodeLocations.find(nl => (nl.id === nodeId))
+    if (!n) return nodeLocations
+    const x0 = n.x
+    const y0 = n.y
+    return nodeLocations.map((nl) => {
+        const dx = nl.x - x0
+        const dy = nl.y - y0
+        const dx2 = Math.cos(degrees * Math.PI / 180) * dx - Math.sin(degrees * Math.PI / 180) * dy
+        const dy2 = Math.sin(degrees * Math.PI / 180) * dx + Math.cos(degrees * Math.PI / 180) * dy
+        return {...nl, x: x0 + dx2, y: y0 + dy2}
+    })
 }
 
 export default spaReducer

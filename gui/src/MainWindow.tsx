@@ -1,4 +1,4 @@
-import { getFigureData, startListeningToParent } from "@figurl/interface";
+import { getFigureData, SetupUrlState, startListeningToParent } from "@figurl/interface";
 import { FunctionComponent, useEffect, useMemo, useReducer, useState } from "react";
 import SpaContext, { initialSpaData } from "./SpaContext/SpaContext";
 import spaReducer from "./SpaContext/spaReducer";
@@ -38,9 +38,11 @@ const MainWindow: FunctionComponent = () => {
         return <div>Invalid view data</div>
     }
     return (
-        <SpaContext.Provider value={spaContextValue}>
-            <View data={data} width={width} height={height} />
-        </SpaContext.Provider>
+        <SetupUrlState>
+            <SpaContext.Provider value={spaContextValue}>
+                <View data={data} width={width} height={height} />
+            </SpaContext.Provider>
+        </SetupUrlState>
     )
 }
 

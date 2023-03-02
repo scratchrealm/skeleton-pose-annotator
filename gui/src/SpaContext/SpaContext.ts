@@ -85,6 +85,12 @@ export type SpaAction = {
     x: number
     y: number
 } | {
+    type: 'rotateInstanceAroundNode'
+    frameIndex: number
+    instanceIndex: number
+    nodeId: string
+    degrees: number
+} | {
     type: 'addInstance'
     frameIndex: number
 } | {
@@ -103,6 +109,9 @@ export type SpaAction = {
     frameIndex: number
     instanceIndex: number
     nodeId: string
+} | {
+    type: 'setAnnotation'
+    annotation: SpaAnnotation
 }
 
 export const initialSpaData: SpaData = {

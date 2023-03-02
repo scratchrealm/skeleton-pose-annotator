@@ -100,6 +100,8 @@ type Props ={
 	// the canvas has been clicked, but not on a clickable object
 	onClick?: (p: {x: number, y: number}, e: React.MouseEvent) => void
 
+	onRotateAroundObject?: (objectId: string, degrees: number) => void
+
 	affineTransform?: AffineTransform
 }
 
@@ -145,7 +147,7 @@ const draggingObjectReducer = (s: DraggingObjectState, a: DraggingObjectAction):
 	else return s
 }
 
-const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObject, onDragObject, onSelectObjects, onSelectRect, onClick, affineTransform, controlGroups}) => {
+const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObject, onDragObject, onSelectObjects, onSelectRect, onClick, onRotateAroundObject, affineTransform, controlGroups}) => {
 	// The drag state (the dragSelectReducer is more generic and is defined elsewhere)
 	const [dragState, dragStateDispatch] = useReducer(dragSelectReducer, {})
 
@@ -236,7 +238,7 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 		return 1 / Math.sqrt(ff[0][0] * ff[1][1] - ff[0][1] * ff[1][0])
 	}, [affineTransform])
 
-	const objectIdsInControlGroup = useMemo(() => (
+	const getObjectIdsInControlGroup = useMemo(() => (
 		(objectId: string) => {
 			const aa = (controlGroups || []).find(g => (g.includes(objectId)))
 			return aa ? aa : [objectId]
@@ -261,7 +263,9 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 		const draggingDelta = draggingObject && draggingObject.newPoint && draggingObject.object ? (
 			{x: draggingObject.newPoint.x - draggingObject.object.x, y: draggingObject.newPoint.y - draggingObject.object.y}
 		) : {x: 0, y: 0}
-		const draggingObjectIds = draggingObject && draggingObject.object ? objectIdsInControlGroup(draggingObject.object.objectId) : []
+		const draggingObjectIds = draggingObject && draggingObject.object ? (
+			dragState.altKey ? getObjectIdsInControlGroup(draggingObject.object.objectId) : [draggingObject.object.objectId]
+		): []
 		const paintObject = (o: Scene2dObject) => {
 			if ((o.type === 'line') || (o.type === 'marker')) {
 				// draw a line or marker
@@ -286,7 +290,7 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 				else if (o.type === 'marker') {
 					// draw a marker
 					const attributes = !o.selected ? o.attributes : o.selectedAttributes || {...o.attributes, fillColor: 'orange', radius: (o.attributes.radius || defaultMarkerRadius) * 1.5}
-					const radius = (attributes.radius || defaultMarkerRadius) * zoomScaleFactor
+					const radius = (attributes.radius || defaultMarkerRadius) * Math.sqrt(zoomScaleFactor) // not sure how exactly to scale
 					const shape = o.attributes.shape || 'circle'
 					ctxt.lineWidth = defaultLineWidth
 					ctxt.fillStyle = attributes.fillColor || 'black'
@@ -330,16 +334,17 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 				const obj1 = objectsById[o.objectId1]
 				const obj2 = objectsById[o.objectId2]
 				if ((obj1) && (obj2) && (obj1.type === 'marker') && (obj2.type === 'marker')) {
+
 					let pp1 = {x: obj1.x, y: obj1.y}
-					if ((draggingObject) && (obj1.objectId === draggingObject.object?.objectId) && (draggingObject.newPoint)) {
+					if (draggingObjectIds.includes(obj1.objectId)) {
 						// use the new location if dragging
-						pp1 = draggingObject.newPoint
+						pp1 = {x: obj1.x + draggingDelta.x, y: obj1.y + draggingDelta.y}
 					}
 
 					let pp2 = {x: obj2.x, y: obj2.y}
-					if ((draggingObject) && (obj2.objectId === draggingObject.object?.objectId) && (draggingObject.newPoint)) {
+					if (draggingObjectIds.includes(obj2.objectId)) {
 						// use the new location if dragging
-						pp2 = draggingObject.newPoint
+						pp2 = {x: obj2.x + draggingDelta.x, y: obj2.y + draggingDelta.y}
 					}
 
 					const attributes = o.attributes
@@ -359,7 +364,7 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 			paintObject(object)
 		})
 		ctxt.restore()
-    }, [objects, width, height, draggingObject, dragState.isActive, dragState.dragRect, affineTransform, zoomScaleFactor])
+    }, [objects, width, height, draggingObject, dragState.isActive, dragState.dragRect, affineTransform, zoomScaleFactor, getObjectIdsInControlGroup, dragState.altKey])
 
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
         const boundingRect = e.currentTarget.getBoundingClientRect()
@@ -398,24 +403,48 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 		if ((draggingObject.newPoint) && (draggingObject.object)) {
 			// we have released the mouse button, and we were dragging an object
 			// so let's call the drag object handler
-			onDragObject && onDragObject(draggingObject.object.objectId, draggingObject.newPoint, e)
+			const draggingDelta = {
+				x: draggingObject.newPoint.x - draggingObject.object.x,
+				y: draggingObject.newPoint.y - draggingObject.object.y
+			}
+			const objIds = e.altKey ? getObjectIdsInControlGroup(draggingObject.object.objectId) : [draggingObject.object.objectId]
+			objIds.forEach(objId => {
+				const oo = objects.find(o => (o.objectId === objId))
+				if ((oo) && (oo.type === 'marker')) {
+					onDragObject && onDragObject(objId, {x: oo.x + draggingDelta.x, y: oo.y + draggingDelta.y}, e)
+				}
+			})
 		}
 		// set the active mouse event for purpose of passing this to event handlers
 		setActiveMouseEvent(e)
 		// communicate the mouse up action to the drag state
 		dragStateDispatch({type: 'DRAG_MOUSE_UP', point: [p.x, p.y]})
-    }, [dragState.isActive, objects, onClickObject, onClick, draggingObject.newPoint, draggingObject.object, onDragObject, affineTransform])
+    }, [dragState.isActive, objects, onClickObject, onClick, draggingObject.newPoint, draggingObject.object, onDragObject, affineTransform, getObjectIdsInControlGroup])
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const boundingRect = e.currentTarget.getBoundingClientRect()
         const p0 = {x: e.clientX - boundingRect.x, y: e.clientY - boundingRect.y}
 		const p = affineTransform ? applyAffineTransformInv(affineTransform, p0) : p0
 		// communicate the mouse move action to the drag state
-		dragStateDispatch({type: 'DRAG_MOUSE_MOVE', point: [p.x, p.y]})
+		dragStateDispatch({type: 'DRAG_MOUSE_MOVE', point: [p.x, p.y], altKey: e.altKey})
     }, [affineTransform])
     const handleMouseLeave = useCallback((e: React.MouseEvent) => {
 		// communicate the mouse leave action to the drag state
 		dragStateDispatch({type: 'DRAG_MOUSE_LEAVE'})
     }, [])
+	const handleWheel = useCallback((e: React.WheelEvent) => {
+		if ((e.altKey) && (onRotateAroundObject)) {
+			const boundingRect = e.currentTarget.getBoundingClientRect()
+			const p0 = {x: e.clientX - boundingRect.x, y: e.clientY - boundingRect.y}
+			const p = affineTransform ? applyAffineTransformInv(affineTransform, p0) : p0
+			objects.forEach(o => {
+				if ((o.type === 'marker')) {
+					if (pointInObject(o, p)) {
+						onRotateAroundObject(o.objectId, e.deltaY > 0 ? 15 : -15)
+					}
+				}
+			})
+		}
+	}, [affineTransform, objects, onRotateAroundObject])
 
 	return (
 		<div
@@ -424,6 +453,7 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 			onMouseUp={handleMouseUp}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
+			onWheel={handleWheel}
         >
 			<BaseCanvas
 				width={width}

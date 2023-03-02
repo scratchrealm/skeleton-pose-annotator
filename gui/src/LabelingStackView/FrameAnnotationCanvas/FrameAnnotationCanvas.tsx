@@ -1,4 +1,4 @@
-import { FunctionComponent, useCallback, useEffect, useRef, useState } from "react";
+import { FunctionComponent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Scene2d, useScene2dObjects } from "../../components/Scene2d";
 import { instanceColorForIndex } from "../../instanceColorList";
 import { SpaFrameAnnotation, SpaNodeLocation } from "../../SpaContext/SpaContext";
@@ -15,8 +15,9 @@ type Props = {
 }
 
 const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affineTransform, width, height, scale}) => {
-    const {moveNodeLocation, annotation, frameWidth, frameHeight} = useSpa()
+    const {moveNodeLocation, rotateInstanceAroundNode, annotation, frameWidth, frameHeight} = useSpa()
     const {objects, clearObjects, addObject} = useScene2dObjects()
+    const markerRadius = width > 800 ? 6 : 4
     useEffect(() => {
         clearObjects()
         if (!frameWidth) return
@@ -32,7 +33,7 @@ const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affin
                         objectId: `n:${instanceIndex}:${n.id}`,
                         x: nl.x * scale[0],
                         y: nl.y * scale[1],
-                        attributes: {lineColor: instanceColor, fillColor: lighten(instanceColor), radius: 4}, draggable: true,
+                        attributes: {lineColor: instanceColor, fillColor: lighten(instanceColor), radius: markerRadius}, draggable: true,
                         textLabel: n.id
                     })
                 }
@@ -41,7 +42,7 @@ const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affin
                 addObject({type: 'connector', objectId: `e:${instanceIndex}:${e.id1}:${e.id2}`, objectId1: `n:${instanceIndex}:${e.id1}`, objectId2: `n:${instanceIndex}:${e.id2}`, attributes: {color: 'orange'}})
             }
         }
-    }, [clearObjects, addObject, frameAnnotation.instances, scale, annotation.skeleton, frameWidth, frameHeight])
+    }, [clearObjects, addObject, frameAnnotation.instances, scale, annotation.skeleton, frameWidth, frameHeight, markerRadius])
     const handleDragObject = useCallback((objectId: string, newPoint: {x: number, y: number}) => {
         const aa = objectId.split(':')
         if (aa[0] === 'n') {
@@ -50,6 +51,21 @@ const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affin
             moveNodeLocation({frameIndex: frameAnnotation.frameIndex, instanceIndex, nodeId, x: newPoint.x / scale[0], y: newPoint.y / scale[1]})
         }
     }, [moveNodeLocation, frameAnnotation.frameIndex, scale])
+    const controlGroups = useMemo(() => {
+        const ret: (string[])[] = []
+        frameAnnotation.instances.forEach((instance, instanceId) => {
+            ret.push(instance.nodeLocations.map(nl => (`n:${instanceId}:${nl.id}`)))
+        })
+        return ret
+    }, [frameAnnotation.instances])
+    const handleRotateAroundObject = useCallback((objectId: string, degrees: number) => {
+        const aa = objectId.split(':')
+        if (aa[0] === 'n') {
+            const instanceIndex = parseInt(aa[1])
+            const nodeId = aa[2]
+            rotateInstanceAroundNode({frameIndex: frameAnnotation.frameIndex, instanceIndex, nodeId, degrees})
+        }
+    }, [frameAnnotation.frameIndex, rotateInstanceAroundNode])
     return (
         <Scene2d
             width={width}
@@ -57,6 +73,8 @@ const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affin
             affineTransform={affineTransform}
             objects={objects}
             onDragObject={handleDragObject}
+            controlGroups={controlGroups}
+            onRotateAroundObject={handleRotateAroundObject}
         />
     )
 }
