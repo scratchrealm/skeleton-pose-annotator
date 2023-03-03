@@ -1,14 +1,22 @@
 # skeleton-pose-annotator
 
-Pose annotation in the browser. Interface is similar to that of [SLEAP](https://github.com/talmolab/sleap).
+Animal pose annotation in the browser. Interface is similar to that of [SLEAP](https://github.com/talmolab/sleap).
 
-[Here's an example](https://figurl.org/f?v=https://scratchrealm.github.io/skeleton-pose-annotator/v1&d=sha1://272f16546785718bf2fa1d43f21019b5b24f5cad&s={%22annotation%22:%22gh://scratchrealm/example-annotations/main/spa/example1.json%22}&label=example%20labeling%20stack)
+[Click here for an example](https://figurl.org/f?v=https://scratchrealm.github.io/skeleton-pose-annotator/v1&d=sha1://272f16546785718bf2fa1d43f21019b5b24f5cad&s={%22annotation%22:%22gh://scratchrealm/example-annotations/main/spa/example1.json%22}&label=example%20labeling%20stack)
+
+Uses [Figurl](https://github.com/flatironinstitute/figurl)
+
+# Usage
+
+## Preparing a labeling stack
+
+See examples folder
 
 ## Edit skeleton
 
 Left panel of GUI. Interface is similar to that of SLEAP.
 
-## Navigate to frames
+## Navigate to frame
 
 Left panel of GUI.
 
@@ -22,12 +30,12 @@ Similar interface as sleap-label in [SLEAP](https://github.com/talmolab/sleap).
 
 * Mouse-wheel to zoom
 * Mouse-drag to pan
-* Alt + mouse-drag to select rectangle to zoom
+* [Alt]+mouse-drag to select rectangle to zoom
 * Click-drag a node to move it
-* Alt-click-drag a node to move entire instance
-* Hover over node and mouse-wheel to rotate instance (a bit different from SLEAP)
+* [Alt]-click-drag a node to move entire instance
+* Hover over node and [Alt]+mouse-wheel to rotate instance (a bit different from SLEAP)
 
-## Export annotation as JSON
+## Export as JSON
 
 Lower left of GUI
 
