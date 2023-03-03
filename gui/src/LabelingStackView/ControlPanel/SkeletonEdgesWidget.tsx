@@ -1,7 +1,8 @@
 import { Delete } from "@mui/icons-material";
-import { Button, IconButton, Table, TableBody, TableCell, TableRow } from "@mui/material";
+import { Button, IconButton, Table, TableBody, TableCell, TableRow, ThemeProvider } from "@mui/material";
 import { FunctionComponent, useCallback } from "react";
 import useSpa from "../../SpaContext/useSpa";
+import { tableTheme } from "./themes";
 
 type Props ={
 	width: number
@@ -25,19 +26,21 @@ const SkeletonEdgesWidget: FunctionComponent<Props> = ({width, height}) => {
             <div>
                 <Button onClick={handleAddEdge}>Add edge</Button>
             </div>
-            <Table>
-                <TableBody>
-                    {
-                        skeleton.edges.map(edge => (
-                            <TableRow key={`${edge.id1}/${edge.id2}`}>
-                                <TableCell><IconButton onClick={() => {deleteSkeletonEdge(edge.id1, edge.id2)}}><Delete /></IconButton></TableCell>
-                                <TableCell>{edge.id1}</TableCell>
-                                <TableCell>{edge.id2}</TableCell>
-                            </TableRow>
-                        ))
-                    }
-                </TableBody>
-            </Table>
+            <ThemeProvider theme={tableTheme}>
+                <Table>
+                    <TableBody>
+                        {
+                            skeleton.edges.map(edge => (
+                                <TableRow key={`${edge.id1}/${edge.id2}`}>
+                                    <TableCell><IconButton onClick={() => {deleteSkeletonEdge(edge.id1, edge.id2)}}><Delete /></IconButton></TableCell>
+                                    <TableCell>{edge.id1}</TableCell>
+                                    <TableCell>{edge.id2}</TableCell>
+                                </TableRow>
+                            ))
+                        }
+                    </TableBody>
+                </Table>
+            </ThemeProvider>
 		</div>
 	)
 }

@@ -1,6 +1,7 @@
 import { Add, AddCircle, Delete } from "@mui/icons-material";
 import { IconButton, Table, TableBody, TableCell, TableHead, TableRow, ThemeProvider } from "@mui/material";
 import { FunctionComponent, useCallback, useMemo } from "react";
+import { instanceColorForIndex } from "../../instanceColorList";
 import useSpa from "../../SpaContext/useSpa";
 import { tableTheme } from "../ControlPanel/themes";
 
@@ -38,7 +39,7 @@ const InstancesWidget: FunctionComponent<Props> = ({width, height}) => {
                             instanceIndices.map(ii => (
                                 <TableRow key={ii}>
                                     <TableCell><IconButton onClick={() => {deleteInstance(currentFrameIndex, ii)}}><Delete /></IconButton></TableCell>
-                                    <TableCell>{ii}</TableCell>
+                                    <TableCell><span style={{color: instanceColorForIndex(ii)}}>Instance {ii}</span></TableCell>
                                 </TableRow>
                             ))
                         }
