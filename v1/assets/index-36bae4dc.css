@@ -1,0 +1,1 @@
+.ControlPanel{background:#ececec}.ControlPanelControls button{background:#ffffff;border:solid rgba(0,0,0,0)}.ControlPanelControls button:disabled{background:#efefef}.ControlPanelControls button:hover:enabled{border:solid lightgray}.ControlPanelControls button:active:enabled{background:#eedd00}.HelpButton:hover{color:#00f}body{margin:0}
