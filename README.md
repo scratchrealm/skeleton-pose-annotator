@@ -25,7 +25,7 @@ Similar interface as sleap-label in [SLEAP](https://github.com/talmolab/sleap).
 * Alt + mouse-drag to select rectangle to zoom
 * Click-drag a node to move it
 * Alt-click-drag a node to move entire instance
-* Hoever over node and mouse-wheel to rotate instance (a bit different from SLEAP)
+* Hover over node and mouse-wheel to rotate instance (a bit different from SLEAP)
 
 ## Export annotation as JSON
 
