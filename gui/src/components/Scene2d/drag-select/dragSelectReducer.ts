@@ -11,6 +11,7 @@ export type DragSelectState = {
 export type DragSelectAction = {
     type: 'DRAG_MOUSE_DOWN'
     point: Vec2
+    altKey?: boolean
 } | {
     type: 'DRAG_MOUSE_UP'
     point: Vec2
@@ -19,7 +20,6 @@ export type DragSelectAction = {
 } | {
     type: 'DRAG_MOUSE_MOVE'
     point: Vec2
-    altKey?: boolean
 }
 
 export const dragSelectReducer = (state: DragSelectState, action: DragSelectAction): DragSelectState => {
@@ -30,7 +30,8 @@ export const dragSelectReducer = (state: DragSelectState, action: DragSelectActi
             isActive: false,
             dragAnchor: point,
             dragPosition: point,
-            dragRect: undefined
+            dragRect: undefined,
+            altKey: action.altKey
         }
     } else if (action.type === 'DRAG_MOUSE_UP') {
         return {
@@ -52,8 +53,7 @@ export const dragSelectReducer = (state: DragSelectState, action: DragSelectActi
             return {
                 ...state,
                 dragRect: newDragRect,
-                dragPosition: [action.point[0], action.point[1]],
-                altKey: action.altKey
+                dragPosition: [action.point[0], action.point[1]]
             }
         }
         else if ((newDragRect[2] >= 1) || (newDragRect[3] >= 1)) { // threshold for moving
@@ -62,7 +62,6 @@ export const dragSelectReducer = (state: DragSelectState, action: DragSelectActi
                 isActive: true,
                 dragRect: newDragRect,
                 dragPosition: [action.point[0], action.point[1]],
-                altKey: action.altKey
             }
         }
         else {

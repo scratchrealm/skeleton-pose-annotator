@@ -6,7 +6,7 @@ const useWheelZoom = (x: number, y: number, width: number, height: number) => {
     const [affineTransform, setAffineTransform] = useState<AffineTransform>(identityAffineTransform)
     const lastWheelEventTimestamp = useRef<number>(0)
     const handleWheel = useCallback((e: React.WheelEvent) => {
-        if (!e.shiftKey) return
+        // if (!e.shiftKey) return
 
         // limiting the frequency of wheel events
         // this is important because if we are using trackpad
@@ -46,7 +46,8 @@ const useWheelZoom = (x: number, y: number, width: number, height: number) => {
     }, [affineTransform, x, y, height, width])
     return {
         affineTransform,
-        handleWheel
+        handleWheel,
+        setAffineTransform
     }
 }
 

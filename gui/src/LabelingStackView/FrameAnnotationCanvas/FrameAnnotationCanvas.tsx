@@ -9,12 +9,13 @@ import { AffineTransform } from "../AffineTransform";
 type Props = {
     frameAnnotation: SpaFrameAnnotation
     affineTransform?: AffineTransform
+    onSelectRect?: (r: {x: number, y: number, w: number, h: number}) => void
     scale: [number, number]
     width: number
     height: number
 }
 
-const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affineTransform, width, height, scale}) => {
+const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affineTransform, onSelectRect, width, height, scale}) => {
     const {moveNodeLocation, rotateInstanceAroundNode, annotation, frameWidth, frameHeight} = useSpa()
     const {objects, clearObjects, addObject} = useScene2dObjects()
     const markerRadius = width > 800 ? 6 : 4
@@ -75,6 +76,7 @@ const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affin
             onDragObject={handleDragObject}
             controlGroups={controlGroups}
             onRotateAroundObject={handleRotateAroundObject}
+            onSelectRect={onSelectRect}
         />
     )
 }

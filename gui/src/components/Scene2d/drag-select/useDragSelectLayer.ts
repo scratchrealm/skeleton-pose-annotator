@@ -16,7 +16,8 @@ const useDragSelectLayer = (width: number, height: number, handleSelectRect: (r:
     const onMouseDown = useCallback((e: React.MouseEvent) => {
         dragSelectStateDispatch({
             type: 'DRAG_MOUSE_DOWN',
-            point: getEventPoint(e)
+            point: getEventPoint(e),
+            altKey: e.altKey
         })
     }, [])
 

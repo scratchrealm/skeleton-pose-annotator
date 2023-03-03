@@ -1,9 +1,10 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import useSpa from "../SpaContext/useSpa";
 import FrameAnnotationCanvas from "./FrameAnnotationCanvas/FrameAnnotationCanvas";
 import FrameImageCanvas from "./FrameImageCanvas/FrameImageCanvas";
 import FrameRightPanel from "./FrameRightPanel/FrameRightPanel";
 import useWheelZoom from "./useWheelZoom";
+import {createAffineTransform, inverseAffineTransform} from './AffineTransform'
 
 type Props = {
     width: number
@@ -31,7 +32,7 @@ const LabelingStackWorkArea: FunctionComponent<Props> = ({width, height}) => {
 		w: W,
 		h: H
 	}), [W, H, width2, height2])
-	const {affineTransform, handleWheel} = useWheelZoom(rect.x, rect.y, rect.w, rect.h)
+	const {affineTransform, handleWheel, setAffineTransform} = useWheelZoom(rect.x, rect.y, rect.w, rect.h)
 
     const jpeg = frameImages[currentFrameIndex] ? frameImages[currentFrameIndex].data : undefined
 
@@ -39,6 +40,12 @@ const LabelingStackWorkArea: FunctionComponent<Props> = ({width, height}) => {
         const aa = annotation.frameAnnotations.filter(x => (x.frameIndex === currentFrameIndex))[0]
         return aa ? aa : undefined
     }, [annotation.frameAnnotations, currentFrameIndex])
+
+    const handleSelectRect = useCallback((rect0: {x: number, y: number, w: number, h: number}) => {
+        const scale = Math.max(rect0.w / rect.w, rect0.h / rect.h)
+        const aa = createAffineTransform([[scale, 0, rect0.x + (rect0.w - rect.w * scale) / 2], [0, scale, rect0.y + (rect0.h - rect.h * scale) / 2]])
+        setAffineTransform(inverseAffineTransform(aa))
+    }, [rect, setAffineTransform])
 
     return (
         <div className="LabelingStackWorkArea" style={{position: 'absolute', width, height}} onWheel={handleWheel}>
@@ -61,6 +68,7 @@ const LabelingStackWorkArea: FunctionComponent<Props> = ({width, height}) => {
                             scale={scale}
                             affineTransform={affineTransform}
                             frameAnnotation={frameAnnotation}
+                            onSelectRect={handleSelectRect}
                         />
                     )
                 }

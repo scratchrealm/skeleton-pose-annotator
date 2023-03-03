@@ -213,7 +213,9 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 				}
 				if (draggingObject.object === null) {
 					// if we are dragging, but not an object, then set the active select rect
-					setActiveSelectRect(dragState.dragRect)
+					if (dragState.altKey) {
+						setActiveSelectRect(dragState.dragRect)
+					}
 				}
 			}
 		}
@@ -255,8 +257,8 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 		}
 		const objectsById: {[id: string]: Scene2dObject} = {}
 		for (const o of objects) objectsById[o.objectId] = o
-		if ((!draggingObject.object) && (dragState.isActive) && (dragState.dragRect)) {
-			const rect = dragState.dragRect
+		if ((!draggingObject.object) && (dragState.isActive) && (dragState.dragRect) && (activeSelectRect)) {
+			const rect = activeSelectRect
 			ctxt.fillStyle = defaultDragStyle
             ctxt.fillRect(rect[0], rect[1], rect[2], rect[3])
 		}
@@ -371,7 +373,7 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
         const p0 = {x: e.clientX - boundingRect.x, y: e.clientY - boundingRect.y}
 		const p = affineTransform ? applyAffineTransformInv(affineTransform, p0) : p0
 		// communicate the mouse down action to the drag state
-        dragStateDispatch({type: 'DRAG_MOUSE_DOWN', point: [p.x, p.y]})
+        dragStateDispatch({type: 'DRAG_MOUSE_DOWN', point: [p.x, p.y], altKey: e.altKey})
     }, [affineTransform])
 	const handleMouseUp = useCallback((e: React.MouseEvent) => {
 		const boundingRect = e.currentTarget.getBoundingClientRect()
@@ -407,7 +409,7 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 				x: draggingObject.newPoint.x - draggingObject.object.x,
 				y: draggingObject.newPoint.y - draggingObject.object.y
 			}
-			const objIds = e.altKey ? getObjectIdsInControlGroup(draggingObject.object.objectId) : [draggingObject.object.objectId]
+			const objIds = dragState.altKey ? getObjectIdsInControlGroup(draggingObject.object.objectId) : [draggingObject.object.objectId]
 			objIds.forEach(objId => {
 				const oo = objects.find(o => (o.objectId === objId))
 				if ((oo) && (oo.type === 'marker')) {
@@ -419,13 +421,13 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 		setActiveMouseEvent(e)
 		// communicate the mouse up action to the drag state
 		dragStateDispatch({type: 'DRAG_MOUSE_UP', point: [p.x, p.y]})
-    }, [dragState.isActive, objects, onClickObject, onClick, draggingObject.newPoint, draggingObject.object, onDragObject, affineTransform, getObjectIdsInControlGroup])
+    }, [dragState.isActive, dragState.altKey, objects, onClickObject, onClick, draggingObject.newPoint, draggingObject.object, onDragObject, affineTransform, getObjectIdsInControlGroup])
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const boundingRect = e.currentTarget.getBoundingClientRect()
         const p0 = {x: e.clientX - boundingRect.x, y: e.clientY - boundingRect.y}
 		const p = affineTransform ? applyAffineTransformInv(affineTransform, p0) : p0
 		// communicate the mouse move action to the drag state
-		dragStateDispatch({type: 'DRAG_MOUSE_MOVE', point: [p.x, p.y], altKey: e.altKey})
+		dragStateDispatch({type: 'DRAG_MOUSE_MOVE', point: [p.x, p.y]})
     }, [affineTransform])
     const handleMouseLeave = useCallback((e: React.MouseEvent) => {
 		// communicate the mouse leave action to the drag state

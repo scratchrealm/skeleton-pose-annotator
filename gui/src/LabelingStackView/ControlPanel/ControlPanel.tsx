@@ -3,7 +3,7 @@ import ControlPanelBottomArea from "./ControlPanelBottomArea";
 import './ControlPanel.css'
 import useSpa from "../../SpaContext/useSpa";
 import ControlPanelSkeletonWidget from "./ControlPanelSkeletonWidget";
-import { getFileData, storeFileData, useUrlState } from "@figurl/interface";
+import { getFileData, storeFileData, storeGithubFileData, useUrlState } from "@figurl/interface";
 import { JSONStringifyDeterministic } from "@figurl/interface/dist/viewInterface/kacheryTypes";
 
 type Props = {
@@ -40,16 +40,13 @@ const ControlPanel: FunctionComponent<Props> = ({width, height}) => {
 	}, [annotation])
 
 	const saveSnapshot = useCallback(() => {
-		console.log('--- save 1')
 		if (!annotation) return
-		console.log('--- save 2')
 		const x = JSONStringifyDeterministic(annotation)
 		setSaving(true)
 		setErrorString('')
 		;(async () => {
 			try {
 				const uri = await storeFileData(x)
-				console.log('--- update url state', uri)
 				updateUrlState({annotation: uri})
 				setSaveState({
 					savedObjectJson: x,
@@ -66,6 +63,31 @@ const ControlPanel: FunctionComponent<Props> = ({width, height}) => {
 		})()
 	}, [annotation, updateUrlState])
 
+	const saveToGithub = useCallback(() => {
+		if (!annotation) return
+		if (!annotationUri) return
+		if (!annotationUri.startsWith('gh://')) return
+		const x = JSONStringifyDeterministic(annotation)
+		setSaving(true)
+		setErrorString('')
+		;(async () => {
+			try {
+				await storeGithubFileData({fileData: x, uri: annotationUri})
+				setSaveState({
+					savedObjectJson: x,
+					savedUri: annotationUri
+				})
+			}
+			catch(err: any) {
+				setErrorString(`Problem saving file data: ${err.message}`)
+				setSaving(false)
+			}
+			finally {
+				setSaving(false)
+			}
+		})()
+	}, [annotation, annotationUri])
+
 	const {initialUrlState} = useUrlState()
     const initialAnnotationUri: string | undefined = initialUrlState.annotation
     useEffect(() => {
@@ -76,6 +98,8 @@ const ControlPanel: FunctionComponent<Props> = ({width, height}) => {
 				savedObjectJson: JSONStringifyDeterministic(x),
 				savedUri: initialAnnotationUri
 			})
+		}).catch(err => {
+			setErrorString(err.message)
 		})
     }, [initialAnnotationUri, setAnnotation])
 
@@ -87,7 +111,8 @@ const ControlPanel: FunctionComponent<Props> = ({width, height}) => {
         else if (command === 'next') incrementCurrentFrameIndex(1)
 		else if (command === 'export-as-json') exportAsJson()
 		else if (command === 'save-snapshot') saveSnapshot()
-    }, [setCurrentFrameIndex, incrementCurrentFrameIndex, numFrames, exportAsJson, saveSnapshot])
+		else if (command === 'save-to-github') saveToGithub()
+    }, [setCurrentFrameIndex, incrementCurrentFrameIndex, numFrames, exportAsJson, saveSnapshot, saveToGithub])
 
     const [saving, setSaving] = useState<boolean>(false)
 
