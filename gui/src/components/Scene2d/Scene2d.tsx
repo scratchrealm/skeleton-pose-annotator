@@ -1,6 +1,6 @@
 import { randomAlphaString } from "@figurl/core-utils";
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useReducer, useState } from "react";
-import { AffineTransform, applyAffineTransformInv } from "../../LabelingStackView/AffineTransform";
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { AffineTransform, applyAffineTransform, applyAffineTransformInv, createAffineTransform, identityAffineTransform, inverseAffineTransform, multAffineTransforms } from "../../LabelingStackView/AffineTransform";
 import { dragSelectReducer } from "./drag-select";
 import { BaseCanvas, pointInRect, RectangularRegion, Vec4 } from "./figurl-canvas";
 
@@ -102,7 +102,8 @@ type Props ={
 
 	onRotateAroundObject?: (objectId: string, degrees: number) => void
 
-	affineTransform?: AffineTransform
+	affineTransform?: AffineTransform // mapping from pixel space to scaled image coord space
+	setAffineTransform?: (a: AffineTransform) => void
 }
 
 const emptyDrawData = {}
@@ -147,7 +148,7 @@ const draggingObjectReducer = (s: DraggingObjectState, a: DraggingObjectAction):
 	else return s
 }
 
-const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObject, onDragObject, onSelectObjects, onSelectRect, onClick, onRotateAroundObject, affineTransform, controlGroups}) => {
+const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObject, onDragObject, onSelectObjects, onSelectRect, onClick, onRotateAroundObject, affineTransform, setAffineTransform, controlGroups}) => {
 	// The drag state (the dragSelectReducer is more generic and is defined elsewhere)
 	const [dragState, dragStateDispatch] = useReducer(dragSelectReducer, {})
 
@@ -247,6 +248,8 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 		}
 	), [controlGroups])
 
+	const [hoveredObjectId, setHoveredObjectId] = useState<string | undefined>()
+
 	// paint all the objects on the canvas
 	const paint = useCallback((ctxt: CanvasRenderingContext2D, props: any) => {
 		ctxt.clearRect(0, 0, width, height)
@@ -297,6 +300,11 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 					ctxt.lineWidth = defaultLineWidth
 					ctxt.fillStyle = attributes.fillColor || 'black'
 					ctxt.strokeStyle = attributes.lineColor || 'black'
+
+					if ((o.objectId === hoveredObjectId) || (o.objectId === draggingObject.object?.objectId)) {
+						ctxt.strokeStyle = 'yellow'
+						ctxt.fillStyle = 'yellow'
+					}
 
 					ctxt.beginPath()
 					if (shape === 'circle') {
@@ -366,15 +374,27 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 			paintObject(object)
 		})
 		ctxt.restore()
-    }, [objects, width, height, draggingObject, dragState.isActive, dragState.dragRect, affineTransform, zoomScaleFactor, getObjectIdsInControlGroup, dragState.altKey])
+    }, [objects, width, height, draggingObject, dragState.isActive, dragState.dragRect, affineTransform, zoomScaleFactor, getObjectIdsInControlGroup, dragState.altKey, activeSelectRect, hoveredObjectId])
 
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
         const boundingRect = e.currentTarget.getBoundingClientRect()
         const p0 = {x: e.clientX - boundingRect.x, y: e.clientY - boundingRect.y}
 		const p = affineTransform ? applyAffineTransformInv(affineTransform, p0) : p0
 		// communicate the mouse down action to the drag state
-        dragStateDispatch({type: 'DRAG_MOUSE_DOWN', point: [p.x, p.y], altKey: e.altKey})
-    }, [affineTransform])
+
+		let isDraggingObject = false
+		for (let i = objects.length - 1; i >= 0; i--) {
+			const o = objects[i]
+			if ((o.draggable) && (o.type === 'marker')) {
+				if (pointInObject(o, p)) {
+					isDraggingObject = true
+					break
+				}
+			}
+		}
+
+        dragStateDispatch({type: 'DRAG_MOUSE_DOWN', point: [p.x, p.y], altKey: e.altKey, extraAnchorData: {affineTransform, point: p0, isDraggingObject}})
+    }, [affineTransform, objects])
 	const handleMouseUp = useCallback((e: React.MouseEvent) => {
 		const boundingRect = e.currentTarget.getBoundingClientRect()
 		const p0 = {x: e.clientX - boundingRect.x, y: e.clientY - boundingRect.y}
@@ -426,13 +446,84 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
         const boundingRect = e.currentTarget.getBoundingClientRect()
         const p0 = {x: e.clientX - boundingRect.x, y: e.clientY - boundingRect.y}
 		const p = affineTransform ? applyAffineTransformInv(affineTransform, p0) : p0
+
+		let hoveredId: string | undefined = undefined
+		for (let i = objects.length - 1; i >= 0; i--) {
+			const o = objects[i]
+			if ((o.draggable) && (o.type === 'marker')) {
+				if (pointInObject(o, p)) {
+					hoveredId = o.objectId
+					break
+				}
+			}
+		}
+		setHoveredObjectId(hoveredId)
+
+		if ((dragState.dragAnchor) && (dragState.extraAnchorData) && (!dragState.altKey) && (setAffineTransform)) {
+			const {affineTransform: anchorAffineTransform, point: anchorPoint, isDraggingObject} = dragState.extraAnchorData
+			if (!isDraggingObject) {
+				const delta = {x: p0.x - anchorPoint.x, y: p0.y - anchorPoint.y}
+				const X = createAffineTransform([
+					[1, 0, delta.x],
+					[0, 1, delta.y]
+				])
+				const newTransform = multAffineTransforms(X, anchorAffineTransform)
+				setAffineTransform(newTransform)
+			}
+		}
+
 		// communicate the mouse move action to the drag state
 		dragStateDispatch({type: 'DRAG_MOUSE_MOVE', point: [p.x, p.y]})
-    }, [affineTransform])
+    }, [affineTransform, dragState.altKey, dragState.dragAnchor, dragState.extraAnchorData, setAffineTransform])
     const handleMouseLeave = useCallback((e: React.MouseEvent) => {
 		// communicate the mouse leave action to the drag state
 		dragStateDispatch({type: 'DRAG_MOUSE_LEAVE'})
     }, [])
+
+	const lastWheelEventTimestamp = useRef<number>(0)
+	const handleZoomWheel = useCallback((e: React.WheelEvent) => {
+		if (!affineTransform) return
+		if (!setAffineTransform) return
+
+		const x = 0
+		const y = 0
+
+		// limiting the frequency of wheel events
+        // this is important because if we are using trackpad
+        // we get excessive frequency of wheel events
+        // which makes it difficult to control the zoom
+        const elapsedSinceLastWheelEvent = Date.now() - lastWheelEventTimestamp.current
+        if (elapsedSinceLastWheelEvent < 100) return
+        lastWheelEventTimestamp.current = Date.now()
+
+        const boundingRect = e.currentTarget.getBoundingClientRect()
+        const point = {x: e.clientX - boundingRect.x - x, y: e.clientY - boundingRect.y - y}
+        const deltaY = e.deltaY
+        const scaleFactor = 1.5
+        let X = createAffineTransform([
+            [scaleFactor, 0, (1 - scaleFactor) * point.x],
+            [0, scaleFactor, (1 - scaleFactor) * point.y]
+        ])
+        if (deltaY > 0) X = inverseAffineTransform(X)
+        let newTransform = multAffineTransforms(
+            X,
+            affineTransform
+        )
+        // test to see if we should snap back to identity
+        const p00 = applyAffineTransform(newTransform, {x: x, y: y})
+        const p11 = applyAffineTransform(newTransform, {x: x + width, y: y + height})
+        if ((p11.x - p00.x < width) && (p11.y - p00.y < height)) {
+            newTransform = identityAffineTransform
+        }
+        // if ((x <= p00.x) && (p00.x < x + width) && (y <= p00.y) && (p00.y < y + height)) {
+        //     if ((x <= p11.x) && (p11.x < x + width) && (y <= p11.y) && (p11.y < y + height)) {
+        //         newTransform = identityAffineTransform
+        //     }
+        // }
+
+        setAffineTransform(newTransform)
+        return false
+	}, [affineTransform, height, setAffineTransform, width])
 	const handleWheel = useCallback((e: React.WheelEvent) => {
 		if ((e.altKey) && (onRotateAroundObject)) {
 			const boundingRect = e.currentTarget.getBoundingClientRect()
@@ -446,7 +537,10 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 				}
 			})
 		}
-	}, [affineTransform, objects, onRotateAroundObject])
+		if (!e.altKey) {
+			handleZoomWheel(e)
+		}
+	}, [affineTransform, objects, onRotateAroundObject, handleZoomWheel])
 
 	return (
 		<div

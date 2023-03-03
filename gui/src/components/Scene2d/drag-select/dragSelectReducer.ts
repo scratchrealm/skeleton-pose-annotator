@@ -1,8 +1,10 @@
+import { AffineTransform } from "../../../LabelingStackView/AffineTransform"
 import { Vec2, Vec4 } from "./types"
 
 export type DragSelectState = {
     isActive?: boolean,  // whether we are in an active dragging state
     dragAnchor?: Vec2, // The position where dragging began (pixels)
+    extraAnchorData?: any
     dragPosition?: Vec2, // The position where dragging ends (pixels)
     dragRect?: Vec4,   // The drag rect. [0],[1] are the upper left corner, [2], [3] are width & height.
     altKey?: boolean
@@ -12,6 +14,7 @@ export type DragSelectAction = {
     type: 'DRAG_MOUSE_DOWN'
     point: Vec2
     altKey?: boolean
+    extraAnchorData?: any
 } | {
     type: 'DRAG_MOUSE_UP'
     point: Vec2
@@ -29,6 +32,7 @@ export const dragSelectReducer = (state: DragSelectState, action: DragSelectActi
             ...state,
             isActive: false,
             dragAnchor: point,
+            extraAnchorData: action.extraAnchorData,
             dragPosition: point,
             dragRect: undefined,
             altKey: action.altKey
@@ -38,6 +42,7 @@ export const dragSelectReducer = (state: DragSelectState, action: DragSelectActi
             ...state,
             isActive: false,
             dragAnchor: undefined,
+            extraAnchorData: undefined,
             dragPosition: undefined,
             dragRect: undefined
         }
