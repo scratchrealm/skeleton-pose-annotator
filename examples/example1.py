@@ -1,5 +1,5 @@
 # 3/3/23
-# https://figurl.org/f?v=https://scratchrealm.github.io/skeleton-pose-annotator/v1&d=sha1://272f16546785718bf2fa1d43f21019b5b24f5cad&label=annotation%20stack
+# https://figurl.org/f?v=https://scratchrealm.github.io/skeleton-pose-annotator/v1&d=sha1://272f16546785718bf2fa1d43f21019b5b24f5cad&label=example%20labeling%20stack
 
 import kachery_cloud as kcl
 import skeleton_pose_annotator as spa
@@ -28,5 +28,5 @@ x = spa.LabelingStack(
     mjpeg_uri=mjpeg_uri
 )
 
-url = x.url(label='annotation stack')
+url = x.url(label='example labeling stack')
 print(url)
