@@ -1,5 +1,5 @@
-# 3/2/23
-# https://figurl.org/f?v=https://scratchrealm.github.io/skeleton-pose-annotator/v1&d=sha1://f8326bf87ca1a2ddf1923c02f9990d5628602447&label=annotation%20stack
+# 3/3/23
+# https://figurl.org/f?v=https://scratchrealm.github.io/skeleton-pose-annotator/v1&d=sha1://272f16546785718bf2fa1d43f21019b5b24f5cad&label=annotation%20stack
 
 import kachery_cloud as kcl
 import skeleton_pose_annotator as spa
@@ -14,7 +14,7 @@ width = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
 fps = vid.get(cv2.CAP_PROP_FPS)
 num_frames = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
 
-frame_indices = [0, 30, 60, 90]
+frame_indices = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180]
 
 with kcl.TemporaryDirectory() as tmpdir:
     mjpeg_fname = f'{tmpdir}/video.mjpeg'

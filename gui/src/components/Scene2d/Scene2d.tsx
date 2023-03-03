@@ -250,6 +250,36 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 
 	const [hoveredObjectId, setHoveredObjectId] = useState<string | undefined>()
 
+	const labelOffsetDirections = useMemo(() => {
+		const ret: {[objecttId: string]: {x: number, y: number}} = {}
+		for (const cg of (controlGroups || [])) {
+			const objectsInCG: Scene2dMarkerObject[] = []
+			for (const o of objects) {
+				if (o.type === 'marker') {
+					if (cg.includes(o.objectId)) {
+						objectsInCG.push(o)
+					}
+				}
+			}
+			if (objectsInCG.length > 0) {
+				const centroid = {
+					x: computeMean(objectsInCG.map(o => (o.x))),
+					y: computeMean(objectsInCG.map(o => (o.y)))
+				}
+				for (const o of objectsInCG) {
+					const dir = {x: o.x - centroid.x, y: o.y - centroid.y}
+					const norm = Math.sqrt(dir.x * dir.x + dir.y * dir.y)
+					if (norm) {
+						dir.x /= norm
+						dir.y /= norm
+						ret[o.objectId] = dir
+					}
+				}
+			}
+		}
+		return ret
+	}, [controlGroups, objects])
+
 	// paint all the objects on the canvas
 	const paint = useCallback((ctxt: CanvasRenderingContext2D, props: any) => {
 		ctxt.clearRect(0, 0, width, height)
@@ -295,7 +325,9 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 				else if (o.type === 'marker') {
 					// draw a marker
 					const attributes = !o.selected ? o.attributes : o.selectedAttributes || {...o.attributes, fillColor: 'orange', radius: (o.attributes.radius || defaultMarkerRadius) * 1.5}
-					const radius = (attributes.radius || defaultMarkerRadius) * Math.sqrt(zoomScaleFactor) // not sure how exactly to scale
+					let radius = (attributes.radius || defaultMarkerRadius)
+					// radius *= Math.sqrt(zoomScaleFactor) // not sure how exactly to scale
+					radius *= zoomScaleFactor // not sure how exactly to scale
 					const shape = o.attributes.shape || 'circle'
 					ctxt.lineWidth = defaultLineWidth
 					ctxt.fillStyle = attributes.fillColor || 'black'
@@ -317,8 +349,13 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 					attributes.lineColor && ctxt.stroke()
 
 					if (o.textLabel) {
-						ctxt.font = `${15*Math.sqrt(zoomScaleFactor)}px Arial` // scaling font size properly is tricky business - sqrt() seems to work well
-						ctxt.fillText(o.textLabel, pp.x + radius + 2, pp.y - radius - 2)
+						const labelOffsetDirection = labelOffsetDirections[o.objectId] || {x: 1, y: 0}
+						let fontSize = 12
+						fontSize *= Math.sqrt(zoomScaleFactor) // not sure how best to scale here
+						ctxt.fillStyle = '#55ccaa'
+						ctxt.font = `bold ${fontSize}px Arial` // scaling font size properly is tricky business - sqrt() seems to work well
+						setTextAlignBasedOnLabelOffsetDirection(ctxt, labelOffsetDirection)
+						ctxt.fillText(o.textLabel, pp.x + (radius * zoomScaleFactor + 2) * labelOffsetDirection.x, pp.y + (radius * zoomScaleFactor + 2) * labelOffsetDirection.y)
 					}
 				}
 			}
@@ -374,7 +411,7 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 			paintObject(object)
 		})
 		ctxt.restore()
-    }, [objects, width, height, draggingObject, dragState.isActive, dragState.dragRect, affineTransform, zoomScaleFactor, getObjectIdsInControlGroup, dragState.altKey, activeSelectRect, hoveredObjectId])
+    }, [objects, width, height, draggingObject, dragState.isActive, dragState.dragRect, affineTransform, zoomScaleFactor, getObjectIdsInControlGroup, dragState.altKey, activeSelectRect, hoveredObjectId, labelOffsetDirections])
 
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
         const boundingRect = e.currentTarget.getBoundingClientRect()
@@ -442,6 +479,43 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 		// communicate the mouse up action to the drag state
 		dragStateDispatch({type: 'DRAG_MOUSE_UP', point: [p.x, p.y]})
     }, [dragState.isActive, dragState.altKey, objects, onClickObject, onClick, draggingObject.newPoint, draggingObject.object, onDragObject, affineTransform, getObjectIdsInControlGroup])
+	const adjustTransformToStayWithinBounds = useMemo(() => (
+		(transform: AffineTransform) => {
+			let newTransform = transform
+			// adjust the transform so we stay within bounds
+			const test1 = applyAffineTransform(newTransform, {x: 0, y: 0})
+			const test2 = applyAffineTransform(newTransform, {x: width, y: height})
+			if (test2.x < width) {
+				const adj = createAffineTransform([
+					[1, 0, -test2.x + width],
+					[0, 1, 0]
+				])
+				newTransform = multAffineTransforms(adj, newTransform)
+			}
+			if (test1.x > 0) {
+				const adj = createAffineTransform([
+					[1, 0, -test1.x + 0],
+					[0, 1, 0]
+				])
+				newTransform = multAffineTransforms(adj, newTransform)
+			}
+			if (test2.y < height) {
+				const adj = createAffineTransform([
+					[1, 0, 0],
+					[0, 1, -test2.y + height]
+				])
+				newTransform = multAffineTransforms(adj, newTransform)
+			}
+			if (test1.y > 0) {
+				const adj = createAffineTransform([
+					[1, 0, 0],
+					[0, 1, -test1.y + 0]
+				])
+				newTransform = multAffineTransforms(adj, newTransform)
+			}
+			return newTransform
+		}
+	), [width, height])
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const boundingRect = e.currentTarget.getBoundingClientRect()
         const p0 = {x: e.clientX - boundingRect.x, y: e.clientY - boundingRect.y}
@@ -462,19 +536,24 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 		if ((dragState.dragAnchor) && (dragState.extraAnchorData) && (!dragState.altKey) && (setAffineTransform)) {
 			const {affineTransform: anchorAffineTransform, point: anchorPoint, isDraggingObject} = dragState.extraAnchorData
 			if (!isDraggingObject) {
-				const delta = {x: p0.x - anchorPoint.x, y: p0.y - anchorPoint.y}
+				const delta = {
+					x: p0.x - anchorPoint.x,
+					y: p0.y - anchorPoint.y
+				}
 				const X = createAffineTransform([
 					[1, 0, delta.x],
 					[0, 1, delta.y]
 				])
-				const newTransform = multAffineTransforms(X, anchorAffineTransform)
+				let newTransform = multAffineTransforms(X, anchorAffineTransform)
+
+				newTransform = adjustTransformToStayWithinBounds(newTransform)
 				setAffineTransform(newTransform)
 			}
 		}
 
 		// communicate the mouse move action to the drag state
 		dragStateDispatch({type: 'DRAG_MOUSE_MOVE', point: [p.x, p.y]})
-    }, [affineTransform, dragState.altKey, dragState.dragAnchor, dragState.extraAnchorData, setAffineTransform])
+    }, [affineTransform, dragState.altKey, dragState.dragAnchor, dragState.extraAnchorData, setAffineTransform, objects, adjustTransformToStayWithinBounds])
     const handleMouseLeave = useCallback((e: React.MouseEvent) => {
 		// communicate the mouse leave action to the drag state
 		dragStateDispatch({type: 'DRAG_MOUSE_LEAVE'})
@@ -521,9 +600,10 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
         //     }
         // }
 
+		newTransform = adjustTransformToStayWithinBounds(newTransform)
         setAffineTransform(newTransform)
         return false
-	}, [affineTransform, height, setAffineTransform, width])
+	}, [affineTransform, height, setAffineTransform, width, adjustTransformToStayWithinBounds])
 	const handleWheel = useCallback((e: React.WheelEvent) => {
 		if ((e.altKey) && (onRotateAroundObject)) {
 			const boundingRect = e.currentTarget.getBoundingClientRect()
@@ -561,6 +641,27 @@ const Scene2d: FunctionComponent<Props> = ({width, height, objects, onClickObjec
 	)
 }
 
+function setTextAlignBasedOnLabelOffsetDirection(canvas: CanvasRenderingContext2D, direction: {x: number, y: number}) {
+	if (direction.x > 0.5) {
+		canvas.textAlign = 'left'
+	}
+	else if (direction.x < -0.5) {
+		canvas.textAlign = 'right'
+	}
+	else {
+		canvas.textAlign = 'center'
+	}
+	if (direction.y > 0.5) {
+		canvas.textBaseline = 'top'
+	}
+	else if (direction.y < -0.5) {
+		canvas.textBaseline = 'bottom'
+	}
+	else {
+		canvas.textBaseline = 'middle'
+	}
+}
+
 const defaultDragStyle = 'rgba(196, 196, 196, 0.5)'
 
 // check whether a point is contained in a scene2d object
@@ -571,6 +672,12 @@ const pointInObject = (o: Scene2dObject, p: {x: number, y: number}) => {
 		return pointInRect([p.x, p.y], R)
 	}
 	else return false
+}
+
+function computeMean(x: number[]) {
+	let ret = x.reduce((prev, v) => (prev + v), 0)
+	if (x.length > 0) ret /= x.length
+	return ret
 }
 
 export const createObjectId = () => (randomAlphaString(10))

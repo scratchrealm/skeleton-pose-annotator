@@ -14,7 +14,6 @@ type Props ={
 
 const topRowHeight = 40
 const rowHeight = 60
-const rowHeight2 = 90
 
 const labelHeight = 16
 const spacing = 10
@@ -27,12 +26,9 @@ const ControlPanelBottomArea: FunctionComponent<Props> = ({width, height, onComm
 				<TopRow width={width} height={topRowHeight} label={label} onCommand={onCommand} />
 			</div>
 			<div style={{position: 'absolute', top: topRowHeight}}>
-				{/* <SelectedVocalizationRow width={width} height={rowHeight2} onCommand={onCommand} /> */}
-			</div>
-			<div style={{position: 'absolute', top: topRowHeight + rowHeight2}}>
 				<SaveAnnotationsRow width={width} height={rowHeight} onCommand={onCommand} dirty={dirty} saving={saving} hasGithubUri={hasGithubUri} />
 			</div>
-			<div style={{position: 'absolute', top: topRowHeight + rowHeight2 + rowHeight, fontSize: labelFontSize}}>
+			<div style={{position: 'absolute', top: topRowHeight + rowHeight, fontSize: labelFontSize}}>
 				{/* <Help className="HelpButton" onClick={() => {onCommand('help')}} /> */}
 				<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
 				{

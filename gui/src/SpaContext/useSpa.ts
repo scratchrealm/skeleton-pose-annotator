@@ -1,5 +1,5 @@
 import { useCallback, useContext, useMemo } from "react"
-import SpaContext, { SpaAnnotation } from "./SpaContext"
+import SpaContext, { SpaAnnotation, SpaSkeleton } from "./SpaContext"
 
 const useSpa = () => {
     const {spaData, spaDispatch} = useContext(SpaContext)
@@ -48,6 +48,10 @@ const useSpa = () => {
         spaDispatch({type: 'setAnnotation', annotation})
     }, [spaDispatch])
 
+    const setSkeleton = useCallback((skeleton: SpaSkeleton) => {
+        spaDispatch({type: 'setSkeleton', skeleton})
+    }, [spaDispatch])
+
     const currentFrameAnnotation = useMemo(() => {
         const aa = spaData.annotation.frameAnnotations.filter(x => (x.frameIndex === spaData.currentFrameIndex))[0]
         return aa ? aa : undefined
@@ -66,7 +70,8 @@ const useSpa = () => {
         addInstance,
         deleteInstance,
         rotateInstanceAroundNode,
-        setAnnotation
+        setAnnotation,
+        setSkeleton
     }
 }
 

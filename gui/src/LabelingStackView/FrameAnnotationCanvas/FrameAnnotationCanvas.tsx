@@ -7,7 +7,7 @@ import { AffineTransform } from "../AffineTransform";
 
 
 type Props = {
-    frameAnnotation: SpaFrameAnnotation
+    frameAnnotation?: SpaFrameAnnotation
     affineTransform?: AffineTransform
     setAffineTransform?: (a: AffineTransform) => void
     onSelectRect?: (r: {x: number, y: number, w: number, h: number}) => void
@@ -19,11 +19,12 @@ type Props = {
 const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affineTransform, setAffineTransform, onSelectRect, width, height, scale}) => {
     const {moveNodeLocation, rotateInstanceAroundNode, annotation, frameWidth, frameHeight} = useSpa()
     const {objects, clearObjects, addObject} = useScene2dObjects()
-    const markerRadius = width > 800 ? 6 : 4
+    const markerRadius = width > 800 ? 5 : 3
     useEffect(() => {
         clearObjects()
         if (!frameWidth) return
         if (!frameHeight) return
+        if (!frameAnnotation) return
         for (let instanceIndex = 0; instanceIndex < frameAnnotation.instances.length; instanceIndex++) {
             const instance = frameAnnotation.instances[instanceIndex]
             const instanceColor = instanceColorForIndex(instanceIndex)
@@ -35,39 +36,53 @@ const FrameAnnotationCanvas: FunctionComponent<Props> = ({frameAnnotation, affin
                         objectId: `n:${instanceIndex}:${n.id}`,
                         x: nl.x * scale[0],
                         y: nl.y * scale[1],
-                        attributes: {lineColor: instanceColor, fillColor: lighten(instanceColor), radius: markerRadius}, draggable: true,
+                        attributes: {
+                            lineColor: instanceColor,
+                            fillColor: lighten(instanceColor),
+                            radius: markerRadius
+                        },
+                        draggable: true,
                         textLabel: n.id
                     })
                 }
             }
             for (const e of annotation.skeleton.edges) {
-                addObject({type: 'connector', objectId: `e:${instanceIndex}:${e.id1}:${e.id2}`, objectId1: `n:${instanceIndex}:${e.id1}`, objectId2: `n:${instanceIndex}:${e.id2}`, attributes: {color: 'orange'}})
+                addObject({
+                    type: 'connector',
+                    objectId: `e:${instanceIndex}:${e.id1}:${e.id2}`,
+                    objectId1: `n:${instanceIndex}:${e.id1}`,
+                    objectId2: `n:${instanceIndex}:${e.id2}`,
+                    attributes: {color: instanceColor}
+                })
             }
         }
-    }, [clearObjects, addObject, frameAnnotation.instances, scale, annotation.skeleton, frameWidth, frameHeight, markerRadius])
+    }, [clearObjects, addObject, scale, annotation.skeleton, frameWidth, frameHeight, markerRadius, frameAnnotation])
     const handleDragObject = useCallback((objectId: string, newPoint: {x: number, y: number}) => {
+        if (!frameAnnotation) return
         const aa = objectId.split(':')
         if (aa[0] === 'n') {
             const instanceIndex = parseInt(aa[1])
             const nodeId = aa[2]
             moveNodeLocation({frameIndex: frameAnnotation.frameIndex, instanceIndex, nodeId, x: newPoint.x / scale[0], y: newPoint.y / scale[1]})
         }
-    }, [moveNodeLocation, frameAnnotation.frameIndex, scale])
+    }, [moveNodeLocation, frameAnnotation, scale])
     const controlGroups = useMemo(() => {
+        if (!frameAnnotation) return []
         const ret: (string[])[] = []
         frameAnnotation.instances.forEach((instance, instanceId) => {
             ret.push(instance.nodeLocations.map(nl => (`n:${instanceId}:${nl.id}`)))
         })
         return ret
-    }, [frameAnnotation.instances])
+    }, [frameAnnotation])
     const handleRotateAroundObject = useCallback((objectId: string, degrees: number) => {
+        if (!frameAnnotation) return
         const aa = objectId.split(':')
         if (aa[0] === 'n') {
             const instanceIndex = parseInt(aa[1])
             const nodeId = aa[2]
             rotateInstanceAroundNode({frameIndex: frameAnnotation.frameIndex, instanceIndex, nodeId, degrees})
         }
-    }, [frameAnnotation.frameIndex, rotateInstanceAroundNode])
+    }, [frameAnnotation, rotateInstanceAroundNode])
     return (
         <Scene2d
             width={width}

@@ -24,6 +24,9 @@ const FrameImageCanvas: FunctionComponent<Props> = ({jpeg, affineTransform, widt
         img.onload = () => {
             if (canceled) return
 
+            ctxt.fillStyle = '#333311' // do this so we can see background if affine transform exposes it
+            ctxt.fillRect(0, 0, width, height)
+
             // important to apply the affine transform in the synchronous part
             ctxt.save()
             if (affineTransform) {

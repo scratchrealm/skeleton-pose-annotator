@@ -62,17 +62,15 @@ const LabelingStackWorkArea: FunctionComponent<Props> = ({width, height}) => {
                     )
                 }
                 {
-                    frameAnnotation && (
-                        <FrameAnnotationCanvas
-                            width={rect.w}
-                            height={rect.h}
-                            scale={scale}
-                            affineTransform={affineTransform}
-                            setAffineTransform={setAffineTransform}
-                            frameAnnotation={frameAnnotation}
-                            onSelectRect={handleSelectRect}
-                        />
-                    )
+                    <FrameAnnotationCanvas
+                        width={rect.w}
+                        height={rect.h}
+                        scale={scale}
+                        affineTransform={affineTransform}
+                        setAffineTransform={setAffineTransform}
+                        frameAnnotation={frameAnnotation}
+                        onSelectRect={handleSelectRect}
+                    />
                 }
             </div>
             <div style={{position: 'absolute', left: width - rightPanelWidth, width: rightPanelWidth}}>

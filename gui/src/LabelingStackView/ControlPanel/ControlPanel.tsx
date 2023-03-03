@@ -5,6 +5,7 @@ import useSpa from "../../SpaContext/useSpa";
 import ControlPanelSkeletonWidget from "./ControlPanelSkeletonWidget";
 import { getFileData, storeFileData, storeGithubFileData, useUrlState } from "@figurl/interface";
 import { JSONStringifyDeterministic } from "@figurl/interface/dist/viewInterface/kacheryTypes";
+import ControlPanelFramesWidget from "./ControlPanelFramesWidget";
 
 type Props = {
     width: number
@@ -21,8 +22,9 @@ type SaveState = {
 const ControlPanel: FunctionComponent<Props> = ({width, height}) => {
     const margin = 10
 	const spacing = 20
-	const bottomHeight = Math.min(220, (height - 2 * margin - spacing) * 2 / 3)
-	const topHeight = (height - 2 * margin - spacing) - bottomHeight
+	const bottomHeight = Math.min(190, (height - 2 * margin - spacing * 2) * 2 / 3)	
+	const topHeight = ((height - 2 * margin - spacing * 2) - bottomHeight) / 2
+	const middleHeight = topHeight
 
 	const {urlState, updateUrlState} = useUrlState()
 	const {annotation, setAnnotation} = useSpa()
@@ -134,7 +136,10 @@ const ControlPanel: FunctionComponent<Props> = ({width, height}) => {
 			<div style={{position: 'absolute', left: margin, top: margin, width: width - 2 * margin, height: topHeight}}>
 				<ControlPanelSkeletonWidget width={width - 2 * margin} height={topHeight} />
 			</div>
-			<div style={{position: 'absolute', left: margin, top: margin + topHeight + spacing, width: width - 2 * margin, height: bottomHeight}}>
+			<div style={{position: 'absolute', left: margin, top: margin + topHeight + spacing, width: width - 2 * margin, height: middleHeight}}>
+				<ControlPanelFramesWidget width={width - 2 * margin} height={topHeight} />
+			</div>
+			<div style={{position: 'absolute', left: margin, top: margin + topHeight + spacing + middleHeight + spacing, width: width - 2 * margin, height: bottomHeight}}>
 				<ControlPanelBottomArea width={width - 2 * margin} height={bottomHeight} onCommand={handleCommand} errorString={errorString} saving={saving} dirty={dirty} hasGithubUri={hasGithubUri} label={`frame ${currentFrameIndex}`} />
 			</div>
 		</div>

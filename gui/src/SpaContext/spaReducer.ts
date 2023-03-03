@@ -180,6 +180,15 @@ const spaReducer = (state: SpaData, action: SpaAction): SpaData => {
             annotation: action.annotation
         }
     }
+    else if (action.type === 'setSkeleton') {
+        return {
+            ...state,
+            annotation: {
+                ...state.annotation,
+                skeleton: action.skeleton
+            }
+        }
+    }
     else return state
 }
 

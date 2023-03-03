@@ -112,6 +112,9 @@ export type SpaAction = {
 } | {
     type: 'setAnnotation'
     annotation: SpaAnnotation
+} | {
+    type: 'setSkeleton',
+    skeleton: SpaSkeleton
 }
 
 export const initialSpaData: SpaData = {
@@ -121,21 +124,10 @@ export const initialSpaData: SpaData = {
     numFrames: undefined,
     annotation: {
         skeleton: {
-            nodes: [{id: 'head'}, {id: 'thorax'}],
-            edges: [{id1: 'head', id2: 'thorax'}]
+            nodes: [],
+            edges: []
         },
         frameAnnotations: [
-            {
-                frameIndex: 0,
-                instances: [
-                    {
-                        nodeLocations: [
-                            {id: 'head', x: 50, y: 50},
-                            {id: 'thorax', x: 150, y: 90}
-                        ]
-                    }
-                ]
-            }
         ]
     },
     frameImages: []

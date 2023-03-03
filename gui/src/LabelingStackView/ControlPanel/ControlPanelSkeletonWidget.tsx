@@ -2,6 +2,7 @@ import { FunctionComponent } from "react";
 import TabWidget from "../../components/TabWidget/TabWidget";
 import SkeletonEdgesWidget from "./SkeletonEdgesWidget";
 import SkeletonNodesWidget from "./SkeletonNodesWidget";
+import SkeletonYamlWidget from "./SkeletonYamlWidget";
 
 type Props ={
 	width: number
@@ -10,7 +11,8 @@ type Props ={
 
 const tabs = [
 	{label: 'Nodes', closeable: false},
-	{label: 'Edges', closeable: false}
+	{label: 'Edges', closeable: false},
+	{label: 'YAML', closeable: false},
 ]
 
 const ControlPanelSkeletonWidget: FunctionComponent<Props> = ({width, height}) => {
@@ -26,6 +28,7 @@ const ControlPanelSkeletonWidget: FunctionComponent<Props> = ({width, height}) =
 				>
 					<SkeletonNodesWidget width={0} height={0}/>
 					<SkeletonEdgesWidget width={0} height={0}/>
+					<SkeletonYamlWidget width={0} height={0}/>
 				</TabWidget>
 			</div>
 		</div>
